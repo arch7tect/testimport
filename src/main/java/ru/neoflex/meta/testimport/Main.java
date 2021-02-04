@@ -157,7 +157,7 @@ public class Main implements Closeable {
                     users.add(oVertex);
                 }
                 Random rand = new Random();
-                for (int i = 0; i < 300; ++i) {
+                for (int i = 0; i < 1000; ++i) {
                     OVertex user = users.get(rand.nextInt(users.size()));
                     OVertex group = groups.get(rand.nextInt(groups.size()));
                     OEdge oEdge = db.newEdge(user, group, memberOfClass);
