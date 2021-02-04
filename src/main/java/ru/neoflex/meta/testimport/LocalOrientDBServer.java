@@ -104,7 +104,7 @@ public class LocalOrientDBServer implements Closeable {
         return oServer;
     }
 
-    protected void activate() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void activate() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         System.setProperty("ORIENTDB_HOME", getHome());
         String dbPath = new File(getHome(), "databases").getAbsolutePath();
         OServerConfiguration  configuration = createDefaultServerConfiguration(dbPath);
