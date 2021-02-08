@@ -9,6 +9,8 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.OEdge;
 import com.orientechnologies.orient.core.record.OVertex;
+import com.orientechnologies.orient.core.storage.OStorage;
+import com.orientechnologies.orient.core.storage.impl.local.OFreezableStorageComponent;
 import com.orientechnologies.orient.core.tx.OTransaction;
 
 import java.io.*;
@@ -82,15 +84,30 @@ public class Main extends LocalOrientDBServer {
             File dir = new File(getHome(), "export");
             dir.mkdirs();
             File file = new File(dir, TESTIMPORT + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".json.gz");
-            try (OutputStream os = new FileOutputStream(file)) {
-                try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(os)) {
-                    ODatabaseExport export = new ODatabaseExport(db, gzipOutputStream, System.out::print);
-                    try {
-                        export.run();
+            OStorage oStorage = db.getStorage();
+            OFreezableStorageComponent freezableStorageComponent = null;
+            if (oStorage instanceof OFreezableStorageComponent) {
+                freezableStorageComponent = (OFreezableStorageComponent) oStorage;
+            }
+            if (freezableStorageComponent != null) {
+                freezableStorageComponent.freeze(false);
+            }
+            try {
+                try (OutputStream os = new FileOutputStream(file)) {
+                    try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(os)) {
+                        ODatabaseExport export = new ODatabaseExport(db, gzipOutputStream, System.out::print);
+                        try {
+                            export.run();
+                        }
+                        finally {
+                            export.close();
+                        }
                     }
-                    finally {
-                        export.close();
-                    }
+                }
+            }
+            finally {
+                if (freezableStorageComponent != null) {
+                    freezableStorageComponent.release();
                 }
             }
             try (InputStream is = new FileInputStream(file)) {
@@ -110,6 +127,7 @@ public class Main extends LocalOrientDBServer {
 
     public static void main(String[] args) {
         try {
+            System.setProperty("ridBag.embeddedToSbtreeBonsaiThreshold", String.valueOf(Integer.MAX_VALUE));
             try (Main main = new Main()) {
                 main.run();
                 main.getOServer().waitForShutdown();
@@ -118,5 +136,4 @@ public class Main extends LocalOrientDBServer {
             e.printStackTrace();
         }
     }
-
 }
